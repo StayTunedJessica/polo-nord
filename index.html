@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Una lettera dal Polo Nord</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Lora:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --notte:#0b1630; --notte2:#13284f; --rosso:#a3162b; --rosso-scuro:#7c0f20;
+    --oro:#d9a93f; --carta:#fbf5e8; --inchiostro:#2b2420;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(ellipse at 50% 0%, var(--notte2) 0%, var(--notte) 70%);
+    color:#fff; font-family:'Lora',Georgia,serif; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  canvas#neve{position:fixed;inset:0;pointer-events:none;z-index:1}
+
+  /* ---------- scena busta ---------- */
+  .scena{position:relative;z-index:2;text-align:center;padding:0 16px;transition:opacity .8s, transform .8s}
+  .scena.via{opacity:0;transform:translateY(40px) scale(.9);pointer-events:none}
+  .titolo{font-family:'Caveat',cursive;font-size:clamp(28px,6vw,42px);color:#f3e6c8;margin-bottom:6px}
+  .sotto{font-size:14px;color:#9fb2d6;letter-spacing:.08em;text-transform:uppercase;margin-bottom:40px}
+
+  .busta{
+    --w:min(360px,86vw); --h:calc(var(--w)*0.64);
+    position:relative;width:var(--w);height:var(--h);margin:0 auto;cursor:pointer;
+    perspective:900px; animation:dondola 3.2s ease-in-out infinite;
+  }
+  .busta.aperta{animation:none;cursor:default}
+  @keyframes dondola{0%,100%{transform:rotate(-1.5deg) translateY(0)}50%{transform:rotate(1.5deg) translateY(-6px)}}
+
+  .retro{position:absolute;inset:0;background:var(--rosso-scuro);border-radius:6px;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+  .foglio{
+    position:absolute;left:6%;right:6%;top:8%;height:84%;
+    background:var(--carta);border-radius:3px;z-index:2;
+    transition:transform 1s cubic-bezier(.2,.8,.2,1) .55s;
+    display:flex;align-items:flex-start;justify-content:center;padding-top:10%;
+    font-family:'Caveat',cursive;color:var(--rosso);font-size:22px;
+  }
+  .busta.aperta .foglio{transform:translateY(-62%)}
+  .tasca{
+    position:absolute;inset:0;z-index:3;border-radius:6px;background:var(--rosso);
+    clip-path:polygon(0 0,50% 56%,100% 0,100% 100%,0 100%);
+  }
+  .tasca::after{ /* triangolo basso */
+    content:"";position:absolute;left:0;right:0;bottom:0;height:50%;
+    background:#b81c33;clip-path:polygon(0 100%,50% 0,100% 100%);
+  }
+  .lembo{
+    position:absolute;left:0;right:0;top:0;height:60%;z-index:4;
+    background:#c22239;clip-path:polygon(0 0,100% 0,50% 100%);
+    transform-origin:top;transition:transform .6s ease-in, z-index 0s .3s;
+  }
+  .busta.aperta .lembo{transform:rotateX(180deg);z-index:1}
+
+  .sigillo{
+    position:absolute;left:50%;top:60%;width:64px;height:64px;z-index:5;
+    transform:translate(-50%,-50%);border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #f2cf6e, var(--oro) 45%, #9c7420 100%);
+    box-shadow:0 3px 8px rgba(0,0,0,.45), inset 0 -3px 6px rgba(0,0,0,.25);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Caveat',cursive;font-weight:700;font-size:22px;color:#6b4c0f;
+    transition:transform .45s, opacity .45s;
+  }
+  .sigillo::before{content:"";position:absolute;inset:6px;border-radius:50%;border:2px dashed rgba(107,76,15,.45)}
+  .busta:not(.aperta):hover .sigillo{transform:translate(-50%,-50%) scale(1.08)}
+  .busta.aperta .sigillo{transform:translate(-50%,-50%) scale(1.6) rotate(25deg);opacity:0}
+  .pulse{position:absolute;left:50%;top:60%;width:64px;height:64px;transform:translate(-50%,-50%);border-radius:50%;
+    z-index:4;box-shadow:0 0 0 0 rgba(217,169,63,.7);animation:pulse 2s infinite}
+  .busta.aperta .pulse{display:none}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(217,169,63,.6)}70%{box-shadow:0 0 0 22px rgba(217,169,63,0)}100%{box-shadow:0 0 0 0 rgba(217,169,63,0)}}
+
+  .hint{margin-top:44px;font-size:15px;color:#c9d6ee}
+  .hint b{color:var(--oro)}
+
+  /* ---------- lettera ---------- */
+  .lettera-wrap{
+    position:fixed;inset:0;z-index:3;display:flex;align-items:flex-start;justify-content:center;
+    overflow-y:auto;padding:5vh 16px 8vh;opacity:0;pointer-events:none;transition:opacity .9s;
+  }
+  .lettera-wrap.on{opacity:1;pointer-events:auto}
+  .lettera{
+    position:relative;width:100%;max-width:620px;background:var(--carta);color:var(--inchiostro);
+    border-radius:4px;padding:52px clamp(22px,6vw,56px) 44px;
+    box-shadow:0 30px 80px rgba(0,0,0,.55);
+    background-image:repeating-linear-gradient(transparent 0 31px, rgba(163,22,43,.07) 31px 32px);
+    transform:translateY(30px) scale(.97);transition:transform 1s cubic-bezier(.2,.8,.2,1);
+  }
+  .lettera-wrap.on .lettera{transform:none}
+  .timbro{
+    position:absolute;top:22px;right:22px;transform:rotate(9deg);
+    font-family:'Special Elite',monospace;color:var(--rosso);border:3px solid var(--rosso);
+    padding:4px 10px;font-size:15px;letter-spacing:.12em;opacity:.8;border-radius:3px;
+  }
+  .luogo{font-family:'Special Elite',monospace;font-size:14px;color:#7a6a5c;margin-bottom:26px}
+  .lettera h1{font-family:'Caveat',cursive;font-weight:700;font-size:clamp(30px,6vw,38px);color:var(--rosso);margin-bottom:18px;line-height:1.1}
+  .lettera p{font-size:17px;line-height:32px;margin-bottom:16px}
+  .lettera .forte{font-weight:600}
+  .box{
+    margin:26px 0;padding:18px 20px;border:2px dashed var(--rosso);border-radius:6px;background:rgba(163,22,43,.04);
+    font-size:16px;line-height:28px;
+  }
+  .box .data{font-family:'Caveat',cursive;font-size:30px;color:var(--rosso);line-height:1.2;display:block;margin-top:4px}
+  .firma{font-family:'Caveat',cursive;font-size:34px;color:var(--rosso);margin-top:26px;line-height:1}
+  .ruolo{font-size:14px;color:#7a6a5c;font-style:italic;margin-top:6px}
+  .ps{margin-top:28px;font-size:15px;color:#5c4f45;font-style:italic;line-height:26px}
+  .azione{text-align:center;margin-top:34px}
+  .btn{
+    font-family:'Lora',serif;font-weight:600;font-size:18px;color:#fff;background:var(--rosso);
+    border:none;border-radius:40px;padding:15px 34px;cursor:pointer;
+    box-shadow:0 6px 0 var(--rosso-scuro),0 10px 24px rgba(163,22,43,.35);transition:transform .15s, box-shadow .15s;
+    animation:batti 1.8s ease-in-out infinite;
+  }
+  .btn:hover{transform:translateY(-2px)}
+  .btn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--rosso-scuro)}
+  @keyframes batti{0%,100%{scale:1}50%{scale:1.04}}
+  .nota{font-size:13px;color:#8a7a6c;margin-top:12px;font-style:italic}
+  .grazie{display:none;text-align:center;margin-top:30px;padding:20px;border-radius:8px;background:rgba(217,169,63,.12)}
+  .grazie.on{display:block;animation:entra .6s ease-out}
+  .grazie p{margin-bottom:10px;line-height:26px}
+  .grazie .g1{font-family:'Caveat',cursive;font-size:30px;color:var(--rosso);line-height:1.2}
+  .link{margin-top:8px;background:none;border:none;font-family:'Lora',serif;font-size:15px;color:var(--rosso);text-decoration:underline;cursor:pointer}
+  @keyframes entra{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .timbro2{
+    position:absolute;left:62%;bottom:270px;font-family:'Special Elite',monospace;font-size:clamp(28px,7vw,44px);line-height:1.1;
+    text-align:center;color:#1f7a3a;border:5px solid #1f7a3a;border-radius:8px;padding:10px 18px;letter-spacing:.08em;
+    transform:translate(-50%,-50%) rotate(-12deg) scale(3);opacity:0;pointer-events:none;mix-blend-mode:multiply;
+  }
+  .timbro2.on{animation:timbra .45s cubic-bezier(.3,1.6,.5,1) forwards}
+  @keyframes timbra{to{opacity:.82;transform:translate(-50%,-50%) rotate(-12deg) scale(1)}}
+  .footer{text-align:center;margin-top:30px;font-family:'Special Elite',monospace;font-size:12px;color:#a59484;letter-spacing:.1em}
+</style>
+</head>
+<body>
+<canvas id="neve"></canvas>
+
+<div class="scena" id="scena">
+  <div class="titolo">È arrivata una lettera per te</div>
+  <div class="sotto" id="sotto">Mittente: Fiocco, elfo del Polo Nord · Riservata</div>
+
+  <div class="busta" id="busta" role="button" aria-label="Apri la lettera">
+    <div class="retro"></div>
+    <div class="foglio">Top secret</div>
+    <div class="tasca"></div>
+    <div class="lembo"></div>
+    <div class="pulse"></div>
+    <div class="sigillo">ST!</div>
+  </div>
+
+  <div class="hint" id="hint">Tocca il <b>sigillo</b> per aprirla</div>
+</div>
+
+<div class="lettera-wrap" id="letteraWrap">
+  <div class="lettera">
+    <div class="timbro">URGENTE</div>
+    <div class="luogo">Polo Nord, 7 dicembre</div>
+
+    <h1>Cari ragazzi di STAY TUNED!,</h1>
+
+    <p>sono <span class="forte">Fiocco</span>, l'elfo stagista dell'Ufficio Comunicazione del Polo Nord. Vi scrivo di nascosto da Babbo Natale, perché è successo un disastro.</p>
+
+    <p class="forte">Il PED di Natale è sparito.</p>
+
+    <p>Sì, proprio quello. Quello con le consegne del 24, i giri delle renne e i post per gli auguri. Ieri sera era sulla scrivania, stamattina non c'era più. Babbo Natale ancora non lo sa e io non ho il coraggio di dirglielo.</p>
+
+    <p>Qui al Polo Nord nessuno sa fare un PED. Gli elfi fanno i giocattoli, le renne volano, la Befana si fa i fatti suoi. Così ho pensato a voi.</p>
+
+    <p>Nei prossimi giorni ognuno di voi riceverà una <span class="forte">busta personale</span>. Dentro c'è un pezzo del mistero. Risolvetelo e tenetevi stretta la risposta, perché vi servirà.</p>
+
+    <p class="forte">Una regola sola: la vostra busta non si mostra a nessuno. Nemmeno ai colleghi.</p>
+
+    <div class="box">
+      La missione per ritrovare il PED si svolgerà in call, tutti insieme.
+      <span class="data">Giovedì 17 dicembre, ore 12</span>
+      Portate la vostra risposta e un po' di spirito natalizio.
+    </div>
+
+    <p>Fidatevi di me. E per favore, non ditelo a Babbo Natale.</p>
+
+    <div class="firma">Fiocco</div>
+    <div class="ruolo">Elfo stagista, Ufficio Comunicazione del Polo Nord</div>
+
+    <div class="ps">P.S. Se trovate briciole di biscotto sulla busta, non sono stato io.</div>
+
+    <div class="azione" id="azione">
+      <button class="btn" id="accetta">🎄 Aiuterò Fiocco</button>
+      <div class="nota">Clicca per accettare la missione</div>
+    </div>
+    <div class="grazie" id="grazie">
+      <p class="g1">Grazie! Fiocco conta su di te.</p>
+      <p>Tieni d'occhio Slack: <b>giovedì 10 dicembre</b> arriva la tua busta personale.</p>
+      <button class="link" id="richiudi">✉️ Richiudi la lettera</button>
+    </div>
+    <div class="timbro2" id="timbro2">MISSIONE<br>ACCETTATA</div>
+
+    <div class="footer">STAY TUNED! · NATALE 2026</div>
+  </div>
+</div>
+
+<script>
+/* ---------- neve ---------- */
+const cv=document.getElementById('neve'),cx=cv.getContext('2d');let W,H,fiocchi=[];
+function resize(){W=cv.width=innerWidth*devicePixelRatio;H=cv.height=innerHeight*devicePixelRatio;cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px'}
+resize();addEventListener('resize',resize);
+for(let i=0;i<140;i++)fiocchi.push({x:Math.random(),y:Math.random(),r:Math.random()*2.4+.6,v:Math.random()*.0012+.0005,o:Math.random()*Math.PI*2});
+let vento=0;
+(function neve(){
+  cx.clearRect(0,0,W,H);cx.fillStyle='rgba(255,255,255,.85)';
+  for(const f of fiocchi){
+    f.y+=f.v;f.o+=.01;f.x+=Math.sin(f.o)*.0004+vento;
+    if(f.y>1.02){f.y=-.02;f.x=Math.random()}
+    if(f.x>1.02)f.x=-.02;if(f.x<-.02)f.x=1.02;
+    cx.beginPath();cx.arc(f.x*W,f.y*H,f.r*devicePixelRatio,0,Math.PI*2);cx.fill();
+  }
+  vento*=.97;requestAnimationFrame(neve);
+})();
+
+/* ---------- campanellino (generato, nessun file audio) ---------- */
+function campanello(){
+  try{
+    const a=new (window.AudioContext||window.webkitAudioContext)();
+    [1318.5,1567.98,2093].forEach((fr,i)=>{
+      const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+i*.12;
+      o.type='sine';o.frequency.value=fr;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.18,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+1.4);
+      o.connect(g).connect(a.destination);o.start(t);o.stop(t+1.5);
+    });
+  }catch(e){}
+}
+
+function jingle(){
+  try{
+    const a=new (window.AudioContext||window.webkitAudioContext)();
+    [1046.5,1318.5,1567.98,2093,2637].forEach((fr,i)=>{
+      const o=a.createOscillator(),g=a.createGain(),t=a.currentTime+i*.09;
+      o.type='triangle';o.frequency.value=fr;
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.14,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+1);
+      o.connect(g).connect(a.destination);o.start(t);o.stop(t+1.1);
+    });
+  }catch(e){}
+}
+
+/* ---------- apertura ---------- */
+const $=id=>document.getElementById(id);
+const busta=$('busta'),scena=$('scena'),wrap=$('letteraWrap');
+busta.addEventListener('click',()=>{
+  if(busta.classList.contains('aperta'))return;
+  busta.classList.add('aperta');campanello();vento=.004;
+  setTimeout(()=>scena.classList.add('via'),1900);
+  setTimeout(()=>wrap.classList.add('on'),2300);
+});
+
+/* ---------- accetto la missione ---------- */
+$('accetta').addEventListener('click',()=>{
+  jingle();$('timbro2').classList.add('on');
+  for(let i=0;i<60;i++)fiocchi.push({x:Math.random(),y:-Math.random()*.3,r:Math.random()*3+1,v:Math.random()*.004+.002,o:Math.random()*6});
+  $('azione').style.display='none';
+  setTimeout(()=>{$('grazie').classList.add('on');$('grazie').scrollIntoView({behavior:'smooth',block:'center'})},500);
+});
+
+/* ---------- richiudi ---------- */
+$('richiudi').addEventListener('click',()=>{
+  wrap.classList.remove('on');
+  setTimeout(()=>{
+    busta.classList.remove('aperta');scena.classList.remove('via');
+    $('sotto').textContent='Missione accettata ✓';
+    $('hint').innerHTML='Tocca il <b>sigillo</b> per rileggerla';
+  },700);
+});
+</script>
+</body>
+</html>

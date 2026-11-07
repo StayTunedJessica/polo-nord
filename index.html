@@ -24,10 +24,10 @@
   .scena{position:relative;z-index:2;text-align:center;padding:0 16px;transition:opacity .8s, transform .8s}
   .scena.via{opacity:0;transform:translateY(40px) scale(.9);pointer-events:none}
   .titolo{font-family:'Caveat',cursive;font-size:clamp(28px,6vw,42px);color:#f3e6c8;margin-bottom:6px}
-  .sotto{font-size:14px;color:#9fb2d6;letter-spacing:.08em;text-transform:uppercase;margin-bottom:40px}
+  .sotto{font-size:14px;color:#9fb2d6;letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px}
 
   .busta{
-    --w:min(360px,86vw); --h:calc(var(--w)*0.64);
+    --w:min(360px,86vw,42vh); --h:calc(var(--w)*0.64);
     position:relative;width:var(--w);height:var(--h);margin:0 auto;cursor:pointer;
     perspective:900px; animation:dondola 3.2s ease-in-out infinite;
   }
@@ -134,12 +134,35 @@
   .timbro2.on{animation:timbra .45s cubic-bezier(.3,1.6,.5,1) forwards}
   @keyframes timbra{to{opacity:.82;transform:translate(-50%,-50%) rotate(-12deg) scale(1)}}
   .footer{text-align:center;margin-top:30px;font-family:'Special Elite',monospace;font-size:12px;color:#a59484;letter-spacing:.1em}
+  /* ---------- videomessaggio di Fiocco ---------- */
+  .vfiocco{margin:0 auto 18px;text-align:center}
+  .vf-tel{position:relative;height:min(30vh,340px);aspect-ratio:9/16;transition:height .9s ease;margin:0 auto;border-radius:20px;overflow:hidden;background:#111;border:5px solid #1d1a18;box-shadow:0 14px 34px rgba(0,0,0,.45)}
+  .vf-tel video{width:100%;height:100%;object-fit:cover;display:block}
+  .vf-play{position:absolute;inset:0;border:0;background:linear-gradient(transparent 72%,rgba(0,0,0,.45));cursor:pointer;display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px}
+  .vf-play span{background:var(--rosso);color:#fff;font:600 14px 'Lora',Georgia,serif;padding:9px 16px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.35);animation:vfpulse 1.8s ease-in-out infinite;white-space:nowrap}
+  @keyframes vfpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+  .vf-tel.va .vf-play{display:none}
+  .vf-cap{font-family:'Caveat',cursive;font-size:22px;color:#f3e6c8;margin-top:8px;line-height:1.1}
+  .vf-sub{font-family:'Lora',Georgia,serif;font-size:12px;color:#9fb2d6;font-style:italic}
+  .scena.guarda .vf-tel{height:min(50vh,560px)}
+  .busta{transition:width .9s cubic-bezier(.3,1.5,.5,1),height .9s cubic-bezier(.3,1.5,.5,1)}
+  .scena.guarda .busta{--w:min(220px,50vw,22vh)}
+  .scena.guarda .hint{opacity:.6}
+  @media (max-height:640px){.sotto{margin-bottom:18px!important}.vfiocco{margin-bottom:10px}}
 </style>
 </head>
 <body>
 <canvas id="neve"></canvas>
 
-<div class="scena" id="scena">
+<div class="scena guarda" id="scena">
+  <div class="vfiocco">
+    <div class="vf-tel" id="vfTel">
+      <video id="vfV" src="video/fiocco-invito.mp4" poster="img/poster-fiocco-invito.jpg" playsinline preload="metadata"></video>
+      <button class="vf-play" id="vfPlay" aria-label="Guarda il video di Fiocco"><span>▶ Guarda il video</span></button>
+    </div>
+    <div class="vf-cap">📹 Un videomessaggio di Fiocco <span class="vf-sub">· alza il volume</span></div>
+  </div>
+
   <div class="titolo">È arrivata una lettera per te</div>
   <div class="sotto" id="sotto">Mittente: Fiocco, elfo del Polo Nord · Riservata</div>
 
@@ -159,6 +182,8 @@
   <div class="lettera">
     <div class="timbro">URGENTE</div>
     <div class="luogo">Polo Nord, 7 dicembre</div>
+
+
 
     <h1>Cari ragazzi di STAY TUNED!,</h1>
 
@@ -193,7 +218,7 @@
     </div>
     <div class="grazie" id="grazie">
       <p class="g1">Grazie! Fiocco conta su di te.</p>
-      <p>Tieni d'occhio Slack: <b>giovedì 10 dicembre</b> arriva la tua busta personale.</p>
+      <p>Tieni d'occhio la mail: <b>giovedì 10 dicembre</b> arriva la tua busta personale.</p>
       <button class="link" id="richiudi">✉️ Richiudi la lettera</button>
     </div>
     <div class="timbro2" id="timbro2">MISSIONE<br>ACCETTATA</div>
@@ -249,6 +274,7 @@ function jingle(){
 const $=id=>document.getElementById(id);
 const busta=$('busta'),scena=$('scena'),wrap=$('letteraWrap');
 busta.addEventListener('click',()=>{
+  if($('vfV'))$('vfV').pause();
   if(busta.classList.contains('aperta'))return;
   busta.classList.add('aperta');campanello();vento=.004;
   setTimeout(()=>scena.classList.add('via'),1900);
@@ -272,6 +298,10 @@ $('richiudi').addEventListener('click',()=>{
     $('hint').innerHTML='Tocca il <b>sigillo</b> per rileggerla';
   },700);
 });
+/* videomessaggio di Fiocco: parte solo col tocco, così l'audio si sente */
+(function(){const t=document.getElementById('vfTel'),v=document.getElementById('vfV'),b=document.getElementById('vfPlay');if(!v)return;
+b.addEventListener('click',e=>{e.stopPropagation();t.classList.add('va');v.controls=true;v.currentTime=0;v.play().catch(()=>{})});
+v.addEventListener('ended',()=>{t.classList.remove('va');v.controls=false;b.querySelector('span').textContent='↻ Rivedi';document.getElementById('scena').classList.remove('guarda')})})();
 </script>
 </body>
 </html>
